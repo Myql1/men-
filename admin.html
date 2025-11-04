@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - WiFiPay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.3.2/dist/pixi.min.js"></script>
+    <script src="https://unpkg.com/splitting@1.0.6/dist/splitting.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+    <link href="https://unpkg.com/splitting@1.0.6/dist/splitting.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-teal: #0D4F4C;
+            --accent-orange: #FF6B35;
+            --neutral-gray: #2D3748;
+            --light-gray: #F7FAFC;
+            --success-green: #38A169;
+            --warning-amber: #D69E2E;
+            --error-red: #E53E3E;
+            --info-blue: #3182CE;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--primary-teal) 0%, #1a365d 50%, #2d3748 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-nav {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .dashboard-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .sidebar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .sidebar-item {
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            margin: 4px 8px;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+        }
+        
+        .sidebar-item.active {
+            background: var(--accent-orange);
+            color: white;
+        }
+        
+        .data-table {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-success { background: #c6f6d5; color: #22543d; }
+        .status-pending { background: #fed7aa; color: #9c4221; }
+        .status-failed { background: #fed7d7; color: #742a2a; }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .modal {
+            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .font-display { font-family: 'Poppins', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .animate-counter {
+            animation: countUp 2s ease-out;
+        }
+        
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pulse-dot {
+            animation: pulse-dot 2s infinite;
+        }
+        
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="glass-nav fixed top-0 left-0 right-0 z-50 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-lg">W</span>
+                </div>
+                <h1 class="text-white font-display font-bold text-xl">WiFiPay Admin</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 text-white">
+                    <div class="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
+                    <span class="text-sm">System Online</span>
+                </div>
+                <img src="./resources/admin-avatar.jpg" alt="Admin" class="w-10 h-10 rounded-full object-cover border-2 border-white">
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Layout -->
+    <div class="flex min-h-screen pt-20">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 fixed left-0 top-20 bottom-0 z-40">
+            <div class="p-6">
+                <nav class="space-y-2">
+                    <a href="#dashboard" class="sidebar-item active flex items-center space-x-3 px-4 py-3 text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#payments" class="sidebar-item flex items-center space-x-3 px-4 py-3 text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                        <span>Payments</span>
+                    </a>
+                    <a href="#vouchers" class="sidebar-item flex items-center space-x-3 px-4 py-3 text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <span>Vouchers</span>
+                    </a>
+                    <a href="#routers" class="sidebar-item flex items-center space-x-3 px-4 py-3 text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3"></path>
+                        </svg>
+                        <span>Routers</span>
+                    </a>
+                    <a href="#analytics" class="sidebar-item flex items-center space-x-3 px-4 py-3 text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <span>Analytics</span>
+                    </a>
+                    <a href="#settings" class="sidebar-item flex items-center space-x-3 px-4 py-3 text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 ml-64">
+            <div class="p-8">
+                <!-- Dashboard Overview -->
+                <div id="dashboard-section" class="section-content">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-display font-bold text-white mb-2">Dashboard Overview</h2>
+                        <p class="text-gray-300">Monitor your WiFi payment system performance</p>
+                    </div>
+                    
+                    <!-- Key Metrics -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="metric-card rounded-2xl p-6 text-white">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                    </svg>
+                                </div>
+                                <span class="text-sm text-gray-300">Today</span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-1 animate-counter" data-target="247">0</h3>
+                            <p class="text-gray-300 text-sm">Active Users</p>
+                        </div>
+                        
+                        <div class="metric-card rounded-2xl p-6 text-white">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                    </svg>
+                                </div>
+                                <span class="text-sm text-gray-300">This Month</span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-1 animate-counter" data-target="1285000">0</h3>
+                            <p class="text-gray-300 text-sm">Revenue (UGX)</p>
+                        </div>
+                        
+                        <div class="metric-card rounded-2xl p-6 text-white">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <span class="text-sm text-gray-300">Success Rate</span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-1 animate-counter" data-target="94">0</h3>
+                            <p class="text-gray-300 text-sm">Payment Success (%)</p>
+                        </div>
+                        
+                        <div class="metric-card rounded-2xl p-6 text-white">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                </div>
+                                <span class="text-sm text-gray-300">Live</span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-1 animate-counter" data-target="12">0</h3>
+                            <p class="text-gray-300 text-sm">Active Routers</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="chart-container rounded-2xl p-6">
+                            <h3 class="text-xl font-display font-semibold text-gray-800 mb-4">Revenue Trend</h3>
+                            <div id="revenue-chart" style="height: 300px;"></div>
+                        </div>
+                        
+                        <div class="chart-container rounded-2xl p-6">
+                            <h3 class="text-xl font-display font-semibold text-gray-800 mb-4">Payment Methods</h3>
+                            <div id="payment-methods-chart" style="height: 300px;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payments Section -->
+                <div id="payments-section" class="section-content hidden">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-display font-bold text-white mb-2">Payment History</h2>
+                        <p class="text-gray-300">Monitor all WiFi payment transactions</p>
+                    </div>
+                    
+                    <div class="dashboard-card rounded-2xl p-6 mb-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                            <h3 class="text-xl font-display font-semibold text-gray-800 mb-2 sm:mb-0">Recent Transactions</h3>
+                            <div class="flex space-x-2">
+                                <input type="text" placeholder="Search transactions..." class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                <button class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                    Export
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-gray-200">
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-700">Transaction ID</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-700">Phone Number</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-700">Package</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-700">Amount</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-700">Method</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-700">Time</th>
+                                        <th class="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payments-table-body">
+                                    <!-- Payment rows will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Vouchers Section -->
+                <div id="vouchers-section" class="section-content hidden">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-display font-bold text-white mb-2">Voucher Management</h2>
+                        <p class="text-gray-300">Generate and manage WiFi vouchers</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="dashboard-card rounded-2xl p-6">
+                            <h3 class="text-xl font-display font-semibold text-gray-800 mb-4">Generate Vouchers</h3>
+                            <form id="voucher-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">Package Type</label>
+                                    <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                        <option value="1hour">1 Hour - UGX 1,000</option>
+                                        <option value="1day">1 Day - UGX 5,000</option>
+                                        <option value="1week">1 Week - UGX 25,000</option>
+                                        <option value="1month">1 Month - UGX 80,000</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">Quantity</label>
+                                    <input type="number" min="1" max="100" value="1" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">Router Location</label>
+                                    <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                        <option value="kampala-road">Kampala Road</option>
+                                        <option value="garden-city">Garden City</option>
+                                        <option value="acacia-mall">Acacia Mall</option>
+                                        <option value="freedom-city">Freedom City</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold transition-colors">
+                                    Generate Vouchers
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <div class="dashboard-card rounded-2xl p-6">
+                            <h3 class="text-xl font-display font-semibold text-gray-800 mb-4">Voucher Statistics</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Total Generated</span>
+                                    <span class="font-semibold text-gray-800">1,247</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Active</span>
+                                    <span class="font-semibold text-green-600">892</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Used</span>
+                                    <span class="font-semibold text-blue-600">324</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Expired</span>
+                                    <span class="font-semibold text-red-600">31</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6">
+                                <h4 class="font-semibold text-gray-800 mb-3">Recent Vouchers</h4>
+                                <div class="space-y-2" id="recent-vouchers">
+                                    <!-- Recent vouchers will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Routers Section -->
+                <div id="routers-section" class="section-content hidden">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-display font-bold text-white mb-2">Router Management</h2>
+                        <p class="text-gray-300">Configure and monitor WiFi routers</p>
+                    </div>
+                    
+                    <div class="dashboard-card rounded-2xl p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-display font-semibold text-gray-800">Active Routers</h3>
+                            <button onclick="showAddRouterModal()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                Add Router
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="routers-grid">
+                            <!-- Router cards will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Analytics Section -->
+                <div id="analytics-section" class="section-content hidden">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-display font-bold text-white mb-2">Analytics & Reports</h2>
+                        <p class="text-gray-300">Detailed insights into your WiFi payment system</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div class="chart-container rounded-2xl p-6">
+                            <h3 class="text-xl font-display font-semibold text-gray-800 mb-4">Daily Revenue</h3>
+                            <div id="daily-revenue-chart" style="height: 300px;"></div>
+                        </div>
+                        
+                        <div class="chart-container rounded-2xl p-6">
+                            <h3 class="text-xl font-display font-semibold text-gray-800 mb-4">Package Popularity</h3>
+                            <div id="package-popularity-chart" style="height: 300px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container rounded-2xl p-6">
+                        <h3 class="text-xl font-display font-semibold text-gray-800 mb-4">User Activity Heatmap</h3>
+                        <div id="activity-heatmap-chart" style="height: 400px;"></div>
+                    </div>
+                </div>
+                
+                <!-- Settings Section -->
+                <div id="settings-section" class="section-content hidden">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-display font-bold text-white mb-2">System Settings</h2>
+                        <p class="text-gray-300">Configure your WiFi payment system</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="dashboard-card rounded-2xl p-6">
+                            <h3 class="text-xl font-display font-semibold text-gray-800 mb-4">Payment Providers</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center space-x-3">
+                                        <img src="./resources/airtel-logo.png" alt="Airtel" class="w-8 h-8 object-contain">
+                                        <span class="font-semibold">Airtel Money</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" checked class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center space-x-3">
+                                        <img src="./resources/mtn-logo.png" alt="MTN" class="w-8 h-8 object-contain">
+                                        <span class="font-semibold">MTN Mobile Money</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" checked class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="dashboard-card rounded-2xl p-6">
+                            <h3 class="text-xl font-display font-semibold text-gray-800 mb-4">SMS Configuration</h3>
+                            <form class="space-y-4">
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">Africa's Talking Username</label>
+                                    <input type="text" value="wifipay_ug" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">API Key</label>
+                                    <input type="password" value="••••••••••••••••" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">Sender ID</label>
+                                    <input type="text" value="WiFiPay" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                </div>
+                                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold transition-colors">
+                                    Save Settings
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Router Modal -->
+    <div id="add-router-modal" class="modal fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="modal-content rounded-2xl p-8 max-w-md w-full">
+            <h3 class="text-2xl font-display font-bold text-gray-800 mb-6">Add New Router</h3>
+            <form id="add-router-form" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Router Name</label>
+                    <input type="text" placeholder="e.g., Kampala Road Main" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Location</label>
+                    <input type="text" placeholder="e.g., Kampala Road, Shop 12" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">IP Address</label>
+                    <input type="text" placeholder="e.g., 192.168.1.100" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Router Model</label>
+                    <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        <option value="tplink-omada">TP-Link Omada</option>
+                        <option value="mikrotik">MikroTik</option>
+                        <option value="ubiquiti">Ubiquiti</option>
+                        <option value="cisco">Cisco</option>
+                    </select>
+                </div>
+                <div class="flex space-x-4 pt-4">
+                    <button type="button" onclick="closeAddRouterModal()" class="flex-1 border-2 border-gray-300 text-gray-700 hover:border-orange-400 hover:text-orange-600 py-3 rounded-lg font-semibold transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold transition-colors">
+                        Add Router
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="main.js"></script>
+</body>
+</html>
